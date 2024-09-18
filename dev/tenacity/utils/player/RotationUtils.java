@@ -177,6 +177,27 @@ public class RotationUtils implements Utils {
         return new float[]{yaw, pitch};
     }
 
+    public static float[] getSmoothRotations(EntityLivingBase entity, float minSpeed, float maxSpeed) {
+        float f1 = mc.gameSettings.mouseSensitivity * 0.6F + 0.2F;
+        float fac = f1 * f1 * f1 * 256.0F;
+
+        double x = entity.posX - mc.thePlayer.posX;
+        double z = entity.posZ - mc.thePlayer.posZ;
+        double y = entity.posY + entity.getEyeHeight()
+                - (mc.thePlayer.getEntityBoundingBox().minY
+                + (mc.thePlayer.getEntityBoundingBox().maxY
+                - mc.thePlayer.getEntityBoundingBox().minY));
+
+        double d3 = MathHelper.sqrt_double(x * x + z * z);
+        float yaw = (float) (MathHelper.atan2(z, x) * 180.0 / Math.PI) - 90.0F;
+        float pitch = (float) (-(MathHelper.atan2(y, d3) * 180.0 / Math.PI));
+        yaw = smoothRotation(mc.thePlayer.prevRotationYawHead, yaw, fac * MathUtils.getRandomFloat(minSpeed, maxSpeed));
+        pitch = smoothRotation(mc.thePlayer.prevRotationPitchHead, pitch, fac * MathUtils.getRandomFloat(minSpeed, maxSpeed));
+
+        return new float[]{yaw, pitch};
+    }
+
+
     public static boolean isMouseOver(final float yaw, final float pitch, final Entity target, final float range) {
         final float partialTicks = mc.timer.renderPartialTicks;
         final Entity entity = mc.getRenderViewEntity();

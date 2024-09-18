@@ -12,7 +12,7 @@ import net.minecraft.world.World;
 import java.io.IOException;
 
 public class C02PacketUseEntity implements Packet<INetHandlerPlayServer> {
-    private int entityId;
+    public int entityId;
     private C02PacketUseEntity.Action action;
     private Vec3 hitVec;
 

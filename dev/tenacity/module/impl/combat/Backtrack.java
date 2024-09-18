@@ -15,6 +15,7 @@ import dev.tenacity.module.settings.impl.ModeSetting;
 import dev.tenacity.module.settings.impl.MultipleBoolSetting;
 import dev.tenacity.module.settings.impl.NumberSetting;
 import dev.tenacity.utils.misc.MathUtils;
+import dev.tenacity.utils.player.ChatUtil;
 import dev.tenacity.utils.render.RenderUtil;
 import dev.tenacity.utils.server.PacketUtils;
 import dev.tenacity.utils.time.TimerUtil;
@@ -44,6 +45,8 @@ public class Backtrack extends Module {
 
     private final NumberSetting maximumReach = new NumberSetting("Maximum Reach (Blocks)", 4.0, 6.0, 0.05, 0.05);
 
+    private final BooleanSetting smart = new BooleanSetting("Smart", true);
+
     // private final ModeSetting lagMode = new ModeSetting("Lag Increment Mode", "Normal", "Normal", "Instant");
 
     private final MultipleBoolSetting targetPackets = new MultipleBoolSetting("Packets to Lag",
@@ -60,7 +63,7 @@ public class Backtrack extends Module {
     public Backtrack() {
         super("Backtrack", Category.COMBAT, "Simulates lag for a reach advantage");
 
-        this.addSettings(mode, minimumRange, maximumRange, minimumLagMS, maximumLagMS, maximumAllowedPackets, maximumReach, targetPackets);
+        this.addSettings(mode, smart, minimumRange, maximumRange, minimumLagMS, maximumLagMS, maximumAllowedPackets, maximumReach, targetPackets);
     }
 
     public CopyOnWriteArrayList<BacktrackData> packetData = new CopyOnWriteArrayList<>();
@@ -73,6 +76,8 @@ public class Backtrack extends Module {
     public TimerUtil backtrackTimer = new TimerUtil();
 
     public int randomizedMilliseconds = 0;
+
+    public boolean shouldBacktrackSmart = false;
 
     @Override
     public void onEnable() {
@@ -110,6 +115,41 @@ public class Backtrack extends Module {
     @Override
     public void onMotionEvent(MotionEvent e) {
         if (e.isPre()) {
+            double closestDist = 999999.0;
+            for (BacktrackData data : packetData) {
+                if (smart.isEnabled() && data.entity.getDistanceToEntity(mc.thePlayer) < closestDist) {
+                    closestDist = data.entity.getDistanceToEntity(mc.thePlayer);
+                }
+            }
+
+            if (smart.isEnabled() && closestDist >= maximumRange.getValue()) {
+                ChatUtil.print("Smart Dist: " + closestDist);
+                shouldBacktrackSmart = false;
+            }
+
+            if (smart.isEnabled() && !shouldBacktrackSmart) {
+                for (BacktrackData data : packetData) {
+                    for (Packet packet : data.movements) {
+                        packet.processPacket(mc.getNetHandler());
+                    }
+                }
+
+                packetData.clear();
+
+                for (BacktrackTimedPacket lagPacket : lagPackets) {
+                    PacketUtils.sendPacketNoEvent(lagPacket.packet);
+                }
+
+                lagPackets.clear();
+
+                for (BacktrackTimedPacket packet : lagPackets2) {
+                    packet.packet.processPacket(mc.getNetHandler());
+                }
+
+                lagPackets2.clear();
+                return;
+            }
+
             if (backtrackTimer.hasTimeElapsed(randomizedMilliseconds)) {
                 for (BacktrackTimedPacket lagPacket : lagPackets2) {
                     if (System.currentTimeMillis() - lagPacket.mills >= randomizedMilliseconds) {
@@ -120,8 +160,25 @@ public class Backtrack extends Module {
 
                 for (BacktrackTimedPacket lagPacket : lagPackets) {
                     if (System.currentTimeMillis() - lagPacket.mills >= randomizedMilliseconds) {
-                        PacketUtils.sendPacketNoEvent(lagPacket.packet);
-                        lagPackets.remove(lagPacket);
+
+                        if (lagPacket.packet instanceof C02PacketUseEntity) {
+                            C02PacketUseEntity packetWrapper = (C02PacketUseEntity) lagPacket.packet;
+
+                            BacktrackData data2 = retrieveData(packetWrapper.entityId);
+                            if (data2.actualPosition.distanceTo(new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ)) >= maximumReach.getValue().doubleValue()) {
+                                ChatUtil.print("Reach: " + data2.actualPosition.distanceTo(new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ)) + " | CANCELLED");
+                                lagPackets.remove(lagPacket);
+                            }
+                            else {
+                                ChatUtil.print("Reach: " + data2.actualPosition.distanceTo(new Vec3(mc.thePlayer.posX, mc.thePlayer.posY, mc.thePlayer.posZ)));
+                                PacketUtils.sendPacketNoEvent(lagPacket.packet);
+                                lagPackets.remove(lagPacket);
+                            }
+                        }
+                        else {
+                            PacketUtils.sendPacketNoEvent(lagPacket.packet);
+                            lagPackets.remove(lagPacket);
+                        }
                     }
                 }
 
@@ -189,7 +246,13 @@ public class Backtrack extends Module {
             event.cancel();
         }
         if (targetPackets.isEnabled("Attacks") && event.getPacket() instanceof C02PacketUseEntity) {
+            BacktrackData data = retrieveData(((C02PacketUseEntity) event.getPacket()).entityId);
+
             lagPackets.add(new BacktrackTimedPacket(event.getPacket()));
+
+            if (!shouldBacktrackSmart) {
+                shouldBacktrackSmart = true;
+            }
             event.cancel();
         }
         if (targetPackets.isEnabled("Entity Actions") && event.getPacket() instanceof C0BPacketEntityAction) {

@@ -54,7 +54,7 @@ public class Velocity extends Module {
 
     @Override
     public void onMotionEvent(MotionEvent event) {
-        if (event.isPre() && doJump) {
+        if (event.isPre() && doJump && mc.thePlayer.onGround) {
             mc.thePlayer.jump();
             doJump = false;
         }

@@ -45,7 +45,7 @@ public class ProtectedLaunch {
         Tenacity.INSTANCE.setModuleCollection(new ModuleCollection());
 
         // Combat
-        // modules.put(AutoClicker.class, new AutoClicker());
+        modules.put(HitRegFix.class, new HitRegFix());
         modules.put(KillAura.class, new KillAura());
         modules.put(Velocity.class, new Velocity());
         modules.put(Criticals.class, new Criticals());

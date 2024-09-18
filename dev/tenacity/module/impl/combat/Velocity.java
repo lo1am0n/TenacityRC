@@ -3,6 +3,7 @@ package dev.tenacity.module.impl.combat;
 import dev.tenacity.event.impl.game.WorldEvent;
 import dev.tenacity.event.impl.network.PacketReceiveEvent;
 import dev.tenacity.event.impl.network.PacketSendEvent;
+import dev.tenacity.event.impl.player.MotionEvent;
 import dev.tenacity.module.Category;
 import dev.tenacity.module.Module;
 import dev.tenacity.module.settings.Setting;
@@ -18,10 +19,11 @@ import net.minecraft.network.play.client.C0FPacketConfirmTransaction;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.network.play.server.S27PacketExplosion;
+import net.minecraft.util.MovingObjectPosition;
 
 public class Velocity extends Module {
 
-    private final ModeSetting mode = new ModeSetting("Mode", "Packet", "Packet", "Matrix", "Tick", "Stack", "C0F Cancel");
+    private final ModeSetting mode = new ModeSetting("Mode", "Basic", "Basic", "Jump", "AttackSlowdownAbuse");
     private final NumberSetting horizontal = new NumberSetting("Horizontal", 0, 100, 0, 1);
     private final NumberSetting vertical = new NumberSetting("Vertical", 0, 100, 0, 1);
     private final NumberSetting chance = new NumberSetting("Chance", 100, 100, 0, 1);
@@ -32,9 +34,12 @@ public class Velocity extends Module {
     private boolean cancel;
     private int stack;
 
+    public int jumpTicks = 0;
+    public boolean doJump = false;
+
     public Velocity() {
         super("Velocity", Category.COMBAT, "Reduces your knockback");
-        Setting.addParent(mode, m -> m.is("Packet"), horizontal, vertical, staffCheck);
+        Setting.addParent(mode, m -> m.is("Basic"), horizontal, vertical, staffCheck);
         this.addSettings(mode, horizontal, vertical, chance, onlyWhileMoving, staffCheck);
     }
 
@@ -48,13 +53,22 @@ public class Velocity extends Module {
     }
 
     @Override
+    public void onMotionEvent(MotionEvent event) {
+        if (event.isPre() && doJump) {
+            mc.thePlayer.jump();
+            doJump = false;
+        }
+        super.onMotionEvent(event);
+    }
+
+    @Override
     public void onPacketReceiveEvent(PacketReceiveEvent e) {
-        this.setSuffix(mode.getMode());
+        this.setSuffix(mode.getMode() + " / " + chance.getValue());
         if ((onlyWhileMoving.isEnabled() && !MovementUtils.isMoving()) || (chance.getValue() != 100 && MathUtils.getRandomInRange(0, 100) > chance.getValue()))
             return;
         Packet<?> packet = e.getPacket();
         switch (mode.getMode()) {
-            case "Packet":
+            case "Basic":
                 if (packet instanceof S12PacketEntityVelocity) {
                     S12PacketEntityVelocity s12 = (S12PacketEntityVelocity) e.getPacket();
                     if (mc.thePlayer != null && s12.getEntityID() == mc.thePlayer.getEntityId()) {
@@ -76,46 +90,20 @@ public class Velocity extends Module {
                     }
                 }
                 break;
-            case "C0F Cancel":
+            case "Jump":
                 if (packet instanceof S12PacketEntityVelocity) {
                     S12PacketEntityVelocity s12 = (S12PacketEntityVelocity) e.getPacket();
                     if (mc.thePlayer != null && s12.getEntityID() == mc.thePlayer.getEntityId()) {
-                        e.cancel();
+                        doJump = true;
                     }
                 }
-                if (packet instanceof S27PacketExplosion) {
-                    e.cancel();
-                }
                 break;
-            case "Stack":
-                if (packet instanceof S12PacketEntityVelocity) {
-                    S12PacketEntityVelocity s12 = (S12PacketEntityVelocity) packet;
-                    cancel = !cancel;
-                    if (cancel) {
-                        e.cancel();
-                    }
-                }
-                if (packet instanceof S27PacketExplosion) {
-                    e.cancel();
-                }
-                break;
-            case "Matrix":
+            case "AttackSlowdownAbuse":
                 if (packet instanceof S12PacketEntityVelocity) {
                     S12PacketEntityVelocity s12 = (S12PacketEntityVelocity) e.getPacket();
-                    if (mc.thePlayer != null && s12.getEntityID() == mc.thePlayer.getEntityId()) {
-                        s12.motionX *= 5 / 100.0;
-                        s12.motionZ *= 5 / 100.0;
-                        s12.motionY *= 100 / 100.0;
-                    }
-                }
-                break;
-            case "Tick":
-                if (packet instanceof S12PacketEntityVelocity) {
-                    S12PacketEntityVelocity s12 = (S12PacketEntityVelocity) e.getPacket();
-                    if (mc.thePlayer != null && s12.getEntityID() == mc.thePlayer.getEntityId() && mc.thePlayer.ticksExisted % 3 == 0) {
-                        s12.motionX *= 5 / 100.0;
-                        s12.motionZ *= 5 / 100.0;
-                        s12.motionY *= 100 / 100.0;
+                    if (mc.thePlayer != null && s12.getEntityID() == mc.thePlayer.getEntityId() && mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY) {
+                        mc.thePlayer.motionX *= 0.6;
+                        mc.thePlayer.motionZ *= 0.6;
                     }
                 }
                 break;

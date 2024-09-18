@@ -45,7 +45,7 @@ public class ProtectedLaunch {
         Tenacity.INSTANCE.setModuleCollection(new ModuleCollection());
 
         // Combat
-        modules.put(AutoClicker.class, new AutoClicker());
+        // modules.put(AutoClicker.class, new AutoClicker());
         modules.put(KillAura.class, new KillAura());
         modules.put(Velocity.class, new Velocity());
         modules.put(Criticals.class, new Criticals());
@@ -54,7 +54,7 @@ public class ProtectedLaunch {
         modules.put(FastBow.class, new FastBow());
         modules.put(KeepSprint.class, new KeepSprint());
         modules.put(IdleFighter.class, new IdleFighter());
-        modules.put(SuperKnockback.class, new SuperKnockback());
+        modules.put(MoreKB.class, new MoreKB());
 
         // Exploit
         modules.put(Disabler.class, new Disabler());

@@ -10,10 +10,10 @@ import java.io.IOException;
 
 public class S14PacketEntity implements Packet<INetHandlerPlayClient>
 {
-    protected int entityId;
-    protected byte posX;
-    protected byte posY;
-    protected byte posZ;
+    public int entityId;
+    public byte posX;
+    public byte posY;
+    public byte posZ;
     protected byte yaw;
     protected byte pitch;
     protected boolean onGround;

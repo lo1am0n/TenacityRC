@@ -59,6 +59,7 @@ public class ESPUtil implements Utils {
                 renderingEntityPos[1] + entity.height + (entity.isSneaking() ? -0.3 : 0.18), renderingEntityPos[2] + entityRenderWidth).expand(0.15, 0.15, 0.15);
     }
 
+
     public static Vector4f getEntityPositionsOn2D(Entity entity) {
         final AxisAlignedBB bb = getInterpolatedBoundingBox(entity);
 

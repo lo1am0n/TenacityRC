@@ -10,10 +10,10 @@ import java.io.IOException;
 
 public class S18PacketEntityTeleport implements Packet<INetHandlerPlayClient>
 {
-    private int entityId;
-    private int posX;
-    private int posY;
-    private int posZ;
+    public int entityId;
+    public int posX;
+    public int posY;
+    public int posZ;
     private byte yaw;
     private byte pitch;
     private boolean onGround;

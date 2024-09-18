@@ -68,6 +68,8 @@ public final class KillAura extends Module {
 
     private final BooleanSetting rotations = new BooleanSetting("Rotations", true);
     private final ModeSetting rotationMode = new ModeSetting("Rotation Mode", "Smooth", "Vanilla", "Smooth");
+    private final NumberSetting minRotSpeedMult = new NumberSetting("Minimum Rotation Speed Multiplier (Smooth)", 0.25, 1.0, 0.05, 0.05);
+    private final NumberSetting maxRotSpeedMult = new NumberSetting("Maximum Rotation Speed Multiplier (Smooth)", 0.35, 1.0, 0.05, 0.05);
 
     private final ModeSetting sortMode = new ModeSetting("Sort Mode", "Range", "Range", "Hurt Time", "Health", "Armor");
 
@@ -94,7 +96,7 @@ public final class KillAura extends Module {
         maxTargetAmount.addParent(mode, m -> mode.is("Multi"));
         customColor.addParent(auraESP, r -> r.isEnabled("Custom Color"));
         this.addSettings(targetsSetting, mode, maxTargetAmount, switchDelay, minCPS, maxCPS, reach, autoblock, autoblockMode,
-                rotations, rotationMode, sortMode, addons, auraESP, customColor);
+                rotations, rotationMode, minRotSpeedMult, maxRotSpeedMult, sortMode, addons, auraESP, customColor);
     }
 
     @Override
@@ -134,7 +136,7 @@ public final class KillAura extends Module {
                             rotations = RotationUtils.getRotationsNeeded(target);
                             break;
                         case "Smooth":
-                            rotations = RotationUtils.getSmoothRotations(target);
+                            rotations = RotationUtils.getSmoothRotations(target, minRotSpeedMult.getValue().floatValue(), maxRotSpeedMult.getValue().floatValue());
                             break;
                     }
                     yaw = event.getYaw();

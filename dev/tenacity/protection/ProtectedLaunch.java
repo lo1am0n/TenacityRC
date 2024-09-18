@@ -45,6 +45,7 @@ public class ProtectedLaunch {
         Tenacity.INSTANCE.setModuleCollection(new ModuleCollection());
 
         // Combat
+        modules.put(Backtrack.class, new Backtrack());
         modules.put(HitRegFix.class, new HitRegFix());
         modules.put(KillAura.class, new KillAura());
         modules.put(Velocity.class, new Velocity());
@@ -95,7 +96,6 @@ public class ProtectedLaunch {
         modules.put(AutoHeadHitter.class, new AutoHeadHitter());
 
         // Player
-        modules.put(BridgeAssist.class, new BridgeAssist());
         modules.put(ChestStealer.class, new ChestStealer());
         modules.put(InvManager.class, new InvManager());
         modules.put(AutoArmor.class, new AutoArmor());

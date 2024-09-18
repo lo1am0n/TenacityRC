@@ -12,6 +12,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Vec3;
 
 import java.awt.*;
 
@@ -220,6 +221,30 @@ public class RenderUtil implements Utils {
 
         GlStateManager.popMatrix();
     }
+
+    public static void renderBoundingBox_BT(Vec3 pos, Color color, float alpha) {
+        AxisAlignedBB bb = mc.thePlayer.getEntityBoundingBox().offset(-mc.thePlayer.posX, -mc.thePlayer.posY, -mc.thePlayer.posZ).
+                offset(pos.xCoord, pos.yCoord, pos.zCoord).expand(0.14, 0.14, 0.14);
+        GlStateManager.pushMatrix();
+        GLUtil.setup2DRendering();
+        GLUtil.enableCaps(GL_BLEND, GL_POINT_SMOOTH, GL_POLYGON_SMOOTH, GL_LINE_SMOOTH);
+
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(false);
+        glLineWidth(3);
+        float actualAlpha = .3f * alpha;
+        glColor4f(color.getRed(), color.getGreen(), color.getBlue(), actualAlpha);
+        color(color.getRGB(), actualAlpha);
+        RenderGlobal.renderCustomBoundingBox(bb, true, true);
+        glDepthMask(true);
+        glEnable(GL_DEPTH_TEST);
+
+        GLUtil.disableCaps();
+        GLUtil.end2DRendering();
+
+        GlStateManager.popMatrix();
+    }
+
 
     public static void circleNoSmoothRGB(double x, double y, double radius, int color) {
         radius /= 2;

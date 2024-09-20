@@ -18,6 +18,7 @@ import dev.tenacity.utils.player.RotationUtils;
 import dev.tenacity.utils.render.RenderUtil;
 import dev.tenacity.utils.server.PacketUtils;
 import dev.tenacity.utils.time.TimerUtil;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityMob;
@@ -64,7 +65,7 @@ public final class KillAura extends Module {
 
     private final BooleanSetting autoblock = new BooleanSetting("Autoblock", false);
 
-    private final ModeSetting autoblockMode = new ModeSetting("Autoblock Mode", "Fake", "Fake", "Verus", "WatchdogOld");
+    private final ModeSetting autoblockMode = new ModeSetting("Autoblock Mode", "Legit", "Legit", "Fake", "Verus", "WatchdogOld");
 
     private final BooleanSetting rotations = new BooleanSetting("Rotations", true);
     private final ModeSetting rotationMode = new ModeSetting("Rotation Mode", "Smooth", "Vanilla", "Smooth");
@@ -109,7 +110,17 @@ public final class KillAura extends Module {
             PacketUtils.sendPacketNoEvent(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN));
         }
         wasBlocking = false;
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
+
         super.onDisable();
+    }
+
+    public int LEGIT_AB_STAGE = 0; // 0 = Waiting for first attack | 1 = Did first attack
+    public boolean legitAutoBlockBoolean = false;
+
+    @Override
+    public void onEnable() {
+        super.onEnable();
     }
 
     @Override
@@ -122,6 +133,69 @@ public final class KillAura extends Module {
 
         // Gets all entities in specified range, sorts them using your specified sort mode, and adds them to target list
         sortTargets();
+
+
+        boolean shouldAttackLegitAutoBlock = false;
+
+        if (autoblockMode.is("Legit") && event.isPre()) {
+            if (LEGIT_AB_STAGE == 0) {
+                double closestDist = 999999.0f;
+
+                for (Entity entity : mc.theWorld.loadedEntityList) {
+                    if (entity.getDistanceToEntity(mc.thePlayer) < closestDist && entity.getDistanceToEntity(mc.thePlayer) >= 1.0) {
+                        closestDist = entity.getDistanceToEntity(mc.thePlayer);
+                    }
+                }
+
+                if (closestDist <= 3.0) {
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
+
+                    if (mc.thePlayer.hurtTime >= 9) {
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
+                        LEGIT_AB_STAGE = 1;
+
+                        shouldAttackLegitAutoBlock = true;
+                    }
+                }
+            }
+            else {
+                if (legitAutoBlockBoolean) { // blocking
+
+                    if (mc.thePlayer.hurtTime >= 9) {
+                        shouldAttackLegitAutoBlock = true;
+                        legitAutoBlockBoolean = false;
+                    }
+                    else {
+                        double closestDist = 999999.0f;
+                        for (Entity entity : mc.theWorld.loadedEntityList) {
+                            if (entity.getDistanceToEntity(mc.thePlayer) < closestDist && entity.getDistanceToEntity(mc.thePlayer) >= 1.0) {
+                                closestDist = entity.getDistanceToEntity(mc.thePlayer);
+                            }
+                        }
+
+                        if (closestDist > 3.0) {
+                            KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
+                        }
+                        else {
+                            KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
+                        }
+                    }
+
+                }
+                else {
+                    if (mc.thePlayer.hurtTime <= 1) {
+                        shouldAttackLegitAutoBlock = true;
+                        legitAutoBlockBoolean = true;
+                    }
+                    else {
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
+                    }
+                }
+
+
+            }
+        }
+
 
         if (event.isPre()) {
             attacking = !targets.isEmpty() && (addons.getSetting("Allow Scaffold").isEnabled() || !Tenacity.INSTANCE.isEnabled(Scaffold.class));
@@ -153,22 +227,31 @@ public final class KillAura extends Module {
                     cps = MathUtils.getRandomInRange(minValue, maxValue);
                     if(mode.is("Multi")) {
                         for(EntityLivingBase entityLivingBase : targets) {
-                            AttackEvent attackEvent = new AttackEvent(entityLivingBase);
-                            Tenacity.INSTANCE.getEventProtocol().handleEvent(attackEvent);
+                            if (autoblockMode.is("Legit")) {
+                                if (shouldAttackLegitAutoBlock) {
+                                    AttackEvent attackEvent = new AttackEvent(entityLivingBase);
+                                    Tenacity.INSTANCE.getEventProtocol().handleEvent(attackEvent);
 
-                            if (!attackEvent.isCancelled()) {
-                                mc.thePlayer.swingItem();
-                                mc.playerController.attackEntity(mc.thePlayer, entityLivingBase);
+                                    if (!attackEvent.isCancelled()) {
+                                        mc.thePlayer.swingItem();
+                                        mc.playerController.attackEntity(mc.thePlayer, entityLivingBase);
+                                    }
+                                }
                             }
                         }
                     } else {
-                        AttackEvent attackEvent = new AttackEvent(target);
-                        Tenacity.INSTANCE.getEventProtocol().handleEvent(attackEvent);
+                        if (autoblockMode.is("Legit")) {
+                            if (shouldAttackLegitAutoBlock) {
+                                AttackEvent attackEvent = new AttackEvent(target);
+                                Tenacity.INSTANCE.getEventProtocol().handleEvent(attackEvent);
 
-                        if (!attackEvent.isCancelled()) {
-                            mc.thePlayer.swingItem();
-                            mc.playerController.attackEntity(mc.thePlayer, target);
+                                if (!attackEvent.isCancelled()) {
+                                    mc.thePlayer.swingItem();
+                                    mc.playerController.attackEntity(mc.thePlayer, target);
+                                }
+                            }
                         }
+
                     }
                 }
 

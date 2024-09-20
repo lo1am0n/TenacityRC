@@ -67,6 +67,7 @@ public class ProtectedLaunch {
         modules.put(Crasher.class, new Crasher());
 
         // Misc
+        modules.put(FlagDetector.class, new FlagDetector());
         modules.put(AntiDesync.class, new AntiDesync());
         modules.put(AntiTabComplete.class, new AntiTabComplete());
         modules.put(Spammer.class, new Spammer());

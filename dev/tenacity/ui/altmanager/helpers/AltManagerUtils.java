@@ -43,6 +43,8 @@ public class AltManagerUtils implements Utils {
                 e.printStackTrace();
             }
         }
+        // TODO: Fully fix
+        /*
         try {
             byte[] content = Files.readAllBytes(altsFile.toPath());
             alts = new ArrayList<>(Arrays.asList(new Gson().fromJson(new String(content), Alt[].class)));
@@ -50,23 +52,11 @@ public class AltManagerUtils implements Utils {
         } catch (Exception e) {
             e.printStackTrace();
         }
+         */
     }
 
     public void writeAltsToFile() {
-        if (timerUtil.hasTimeElapsed(15000, true)) {
-            new Thread(() -> {
-                try {
-                    if (!altsFile.exists()) {
-                        if (altsFile.getParentFile().mkdirs()) {
-                            altsFile.createNewFile();
-                        }
-                    }
-                    Files.write(altsFile.toPath(), new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create().toJson(alts.toArray(new Alt[0])).getBytes(StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-        }
+
     }
 
     public static void removeAlt(Alt alt) {
@@ -76,15 +66,7 @@ public class AltManagerUtils implements Utils {
     }
 
     public static void writeAlts() {
-        Multithreading.runAsync(() -> {
-            try {
-                Files.write(altsFile.toPath(), new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create().toJson(alts.toArray(new Alt[0])).getBytes(StandardCharsets.UTF_8));
-                //Show success message
-            } catch (IOException e) {
-                e.printStackTrace();
-                //    Notification.post(NotificationType.WARNING, "Failed to save", "Failed to save alt list due to an IOException");
-            }
-        });
+
     }
 
 

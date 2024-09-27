@@ -61,6 +61,7 @@ public final class KillAura extends Module {
 
     private final NumberSetting minCPS = new NumberSetting("Min CPS", 10, 20, 1, 1);
     private final NumberSetting maxCPS = new NumberSetting("Max CPS", 15, 20, 1, 1);
+
     private final NumberSetting reach = new NumberSetting("Reach", 3, 6, 3, 0.1);
 
     private final BooleanSetting autoblock = new BooleanSetting("Autoblock", false);

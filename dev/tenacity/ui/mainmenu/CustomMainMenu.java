@@ -192,8 +192,8 @@ public class CustomMainMenu extends GuiScreen {
             buttonIncrement++;
         }
 
-        tenacityBoldFont80.drawCenteredString("Tela", width / 2f, height / 2f - 110, Color.WHITE.getRGB());
-        tenacityFont32.drawString(Tenacity.VERSION, width / 2f + tenacityBoldFont80.getStringWidth("Tela") / 2f - (tenacityFont32.getStringWidth(Tenacity.VERSION) / 2f), height / 2f - 113, Color.WHITE.getRGB());
+        tenacityBoldFont80.drawCenteredString("Tenacity", width / 2f, height / 2f - 110, Color.WHITE.getRGB());
+        tenacityFont32.drawString(Tenacity.VERSION, width / 2f + tenacityBoldFont80.getStringWidth("Tenacity") / 2f - (tenacityFont32.getStringWidth(Tenacity.VERSION) / 2f), height / 2f - 113, Color.WHITE.getRGB());
         tenacityFont18.drawCenteredString("by te1amon with <3", width / 2f, height / 2f - 68, Color.WHITE.getRGB());
 
     }
